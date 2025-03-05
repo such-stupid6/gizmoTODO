@@ -11,10 +11,13 @@ function createWindow() {
             preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
             enableRemoteModule: false,
-        }
+        },
+        autoHideMenuBar: true, // 自动隐藏菜单栏
+        menuBarVisible: false  
     });
 
-
+    win.setMenu(null);
+    
     win.loadFile('index.html');
     win.once('ready-to-show', () => {
         win.show()

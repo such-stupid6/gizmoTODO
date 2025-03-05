@@ -206,10 +206,12 @@ function showInputDialog() {
     todoInput.value = '';
     deadlineInput.value = '';
     
-    // 根据当前选择的分类预选择下拉框
+    // 自动设置当前选中的分类
     if (currentCategory !== 'all' && categories.includes(currentCategory)) {
+        // 当前选中的是具体分类，直接使用
         categorySelect.value = currentCategory;
-    } else if (categories.length > 0) {
+    } else if (currentCategory === 'all' && categories.length > 0) {
+        // 当前选中的是"全部"，使用第一个可用分类作为默认值
         categorySelect.value = categories[0];
     }
     
@@ -238,8 +240,13 @@ function addTodo(todoInput, deadlineInput, categorySelect) {
         deadlineText = formatDeadline(deadlineDate);
     }
     
-    // 获取选择的分类
-    const category = categorySelect.value;
+    // 获取分类 - 优先使用当前分类，如果当前是"全部"则使用选择器中的值
+    let category;
+    if (currentCategory !== 'all' && categories.includes(currentCategory)) {
+        category = currentCategory;
+    } else {
+        category = categorySelect.value;
+    }
     
     // 创建待办事项对象
     const todoItem = {
@@ -267,28 +274,71 @@ function createTodoElement(todoItem) {
     // 添加可点击的视觉提示样式
     li.classList.add('clickable');
     
-    // 先添加待办事项文本
+    // 创建待办事项容器，用于放置待办文本和日期
+    const contentDiv = document.createElement('div');
+    contentDiv.classList.add('todo-content');
+    
+    // 添加待办事项文本
     const textSpan = document.createElement('span');
     textSpan.textContent = todoItem.text;
-    li.appendChild(textSpan);
+    contentDiv.appendChild(textSpan);
     
     // 如果有截止日期，添加日期元素并设置紧急度样式
     if (todoItem.deadlineText) {
         const dateSpan = document.createElement('span');
         dateSpan.textContent = todoItem.deadlineText;
         dateSpan.classList.add('deadline-text');
-        li.appendChild(dateSpan);
+        contentDiv.appendChild(dateSpan);
         
         // 添加颜色标记表示紧急程度
         const urgency = getUrgencyClass(todoItem.deadline);
         li.classList.add(urgency);
     }
     
+    // 添加内容区域到列表项
+    li.appendChild(contentDiv);
+    
+    // 添加操作按钮区域
+    const actionsDiv = document.createElement('div');
+    actionsDiv.classList.add('todo-actions');
+    
+    // 添加删除按钮
+    const deleteButton = document.createElement('button');
+    deleteButton.innerHTML = '×'; // 使用 × 作为删除图标
+    deleteButton.classList.add('delete-button');
+    deleteButton.title = '删除';
+    deleteButton.onclick = function(e) {
+        e.stopPropagation(); // 阻止事件冒泡
+        if (confirm('确定要删除这个待办事项吗？')) {
+            deleteTodo(todoItem.id);
+        }
+    };
+    
+    // 将删除按钮添加到操作区域
+    actionsDiv.appendChild(deleteButton);
+    
+    // 将操作区域添加到列表项
+    li.appendChild(actionsDiv);
+    
+    // 设置完成状态
     if (todoItem.completed) {
         li.classList.add('completed');
     }
     
     return li;
+}
+
+// 删除待办事项
+function deleteTodo(id) {
+    // 从数组中删除对应id的待办事项
+    const index = todoItems.findIndex(item => item.id == id);
+    if (index !== -1) {
+        todoItems.splice(index, 1);
+        
+        // 保存并重新渲染
+        saveTodos();
+        renderFilteredTodos();
+    }
 }
 
 // 格式化截止日期
