@@ -266,42 +266,48 @@ function App() {
     <Layout className="h-screen overflow-hidden rounded-xl bg-transparent shadow-2xl border border-gray-200/50">
       {contextHolder}
       
-      {/* 顶部可拖拽区域 & macOS 风格红绿灯 */}
-      <div className="fixed top-0 left-0 w-full h-[38px] z-50 flex items-center px-4" style={{ WebkitAppRegion: 'drag' }}>
-        <div className="flex gap-2 group" style={{ WebkitAppRegion: 'no-drag' }}>
-          {/* Close Button - Red */}
-          <div 
-            onClick={handleClose}
-            className="w-3 h-3 rounded-full bg-[#ff5f56] border border-[#e0443e] flex items-center justify-center cursor-pointer hover:bg-[#ff5f56]/80 active:bg-[#bf403a] transition-colors"
-          >
-            <span className="opacity-0 group-hover:opacity-100 text-[8px] font-bold text-[#4d0000] leading-none mt-[1px]">✕</span>
-          </div>
-          {/* Minimize Button - Yellow */}
-          <div 
-            onClick={handleMinimize}
-            className="w-3 h-3 rounded-full bg-[#ffbd2e] border border-[#dea123] flex items-center justify-center cursor-pointer hover:bg-[#ffbd2e]/80 active:bg-[#bf8e22] transition-colors"
-          >
-            <span className="opacity-0 group-hover:opacity-100 text-[8px] font-bold text-[#594208] leading-none mt-[-2px]">−</span>
-          </div>
-          {/* Maximize Button - Green */}
-          <div 
-            onClick={handleMaximize}
-            className="w-3 h-3 rounded-full bg-[#27c93f] border border-[#1aab29] flex items-center justify-center cursor-pointer hover:bg-[#27c93f]/80 active:bg-[#1d8a2b] transition-colors"
-          >
-            <span className="opacity-0 group-hover:opacity-100 text-[6px] font-bold text-[#0a4010] leading-none mt-[1px]">sw</span>
-          </div>
-        </div>
-      </div>
-      
       <Sider 
         trigger={null} 
         collapsible 
         collapsed={collapsed} 
         theme="light"
         width={250}
-        className="border-r border-gray-200"
+        className="border-r border-gray-200 bg-gray-50/50"
       >
-        <div className="flex items-center justify-between p-4 border-b border-gray-100">
+        {/* macOS 风格红绿灯区域 */}
+        <div className="h-[40px] flex items-center px-4" style={{ WebkitAppRegion: 'drag' }}>
+            <div className="flex gap-2" style={{ WebkitAppRegion: 'no-drag' }}>
+            {/* Close Button - Red */}
+            <div 
+                onClick={handleClose}
+                className="w-3 h-3 rounded-full bg-[#ff5f56] border border-[#e0443e] flex items-center justify-center cursor-pointer hover:bg-[#ff5f56]/80 active:bg-[#bf403a] transition-colors group"
+            >
+                <svg width="7" height="7" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <path d="M2.5 2.5L7.5 7.5M7.5 2.5L2.5 7.5" stroke="#4c0000" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+            </div>
+            {/* Minimize Button - Yellow */}
+            <div 
+                onClick={handleMinimize}
+                className="w-3 h-3 rounded-full bg-[#ffbd2e] border border-[#dea123] flex items-center justify-center cursor-pointer hover:bg-[#ffbd2e]/80 active:bg-[#bf8e22] transition-colors group"
+            >
+                <svg width="7" height="7" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <path d="M2 5H8" stroke="#995700" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+            </div>
+            {/* Maximize Button - Green */}
+            <div 
+                onClick={handleMaximize}
+                className="w-3 h-3 rounded-full bg-[#27c93f] border border-[#1aab29] flex items-center justify-center cursor-pointer hover:bg-[#27c93f]/80 active:bg-[#1d8a2b] transition-colors group"
+            >
+                <svg width="6" height="6" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <path d="M1.5 8.5v-4M1.5 8.5h4M1.5 8.5l4-4M8.5 1.5v4M8.5 1.5h-4M8.5 1.5l-4 4" stroke="#006500" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+            </div>
+            </div>
+        </div>
+
+        <div className="flex items-center justify-between px-4 pb-4 border-b border-gray-100">
           {!collapsed && <Title level={4} style={{ margin: 0 }}>分类</Title>}
           <Button
             type="text"
@@ -326,18 +332,20 @@ function App() {
       </Sider>
       
       <Layout className="bg-white">
-        <Header className="bg-white px-6 border-b border-gray-200 flex items-center justify-between h-[64px]">
+        <Header className="bg-white px-6 border-b border-gray-200 flex items-center justify-between h-[64px]" style={{ WebkitAppRegion: 'drag' }}>
           <Title level={3} style={{ margin: 0 }}>
             {currentCategory === 'all' ? '全部' : currentCategory}
           </Title>
-          <Button 
-            type="primary" 
-            icon={<PlusOutlined />} 
-            onClick={() => setIsTodoModalOpen(true)}
-            className="bg-[#28a745] hover:!bg-[#218838]"
-          >
-            添加待办
-          </Button>
+          <div style={{ WebkitAppRegion: 'no-drag' }}>
+            <Button 
+                type="primary" 
+                icon={<PlusOutlined />} 
+                onClick={() => setIsTodoModalOpen(true)}
+                className="bg-[#28a745] hover:!bg-[#218838]"
+            >
+                添加待办
+            </Button>
+          </div>
         </Header>
         
         <Content className="p-6 overflow-y-auto bg-gray-50">
