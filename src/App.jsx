@@ -241,9 +241,58 @@ function App() {
     }
   ];
 
+  const handleMinimize = () => {
+    if (window.require) {
+      const { ipcRenderer } = window.require('electron');
+      ipcRenderer.send('window-minimize');
+    }
+  };
+
+  const handleMaximize = () => {
+    if (window.require) {
+      const { ipcRenderer } = window.require('electron');
+      ipcRenderer.send('window-maximize');
+    }
+  };
+
+  const handleClose = () => {
+    if (window.require) {
+      const { ipcRenderer } = window.require('electron');
+      ipcRenderer.send('window-close');
+    }
+  };
+
   return (
-    <Layout className="w-[900px] h-[600px] rounded-lg overflow-hidden shadow-lg bg-white">
+    <Layout className="h-screen overflow-hidden rounded-xl bg-transparent shadow-2xl border border-gray-200/50">
       {contextHolder}
+      
+      {/* 顶部可拖拽区域 & macOS 风格红绿灯 */}
+      <div className="fixed top-0 left-0 w-full h-[38px] z-50 flex items-center px-4" style={{ WebkitAppRegion: 'drag' }}>
+        <div className="flex gap-2 group" style={{ WebkitAppRegion: 'no-drag' }}>
+          {/* Close Button - Red */}
+          <div 
+            onClick={handleClose}
+            className="w-3 h-3 rounded-full bg-[#ff5f56] border border-[#e0443e] flex items-center justify-center cursor-pointer hover:bg-[#ff5f56]/80 active:bg-[#bf403a] transition-colors"
+          >
+            <span className="opacity-0 group-hover:opacity-100 text-[8px] font-bold text-[#4d0000] leading-none mt-[1px]">✕</span>
+          </div>
+          {/* Minimize Button - Yellow */}
+          <div 
+            onClick={handleMinimize}
+            className="w-3 h-3 rounded-full bg-[#ffbd2e] border border-[#dea123] flex items-center justify-center cursor-pointer hover:bg-[#ffbd2e]/80 active:bg-[#bf8e22] transition-colors"
+          >
+            <span className="opacity-0 group-hover:opacity-100 text-[8px] font-bold text-[#594208] leading-none mt-[-2px]">−</span>
+          </div>
+          {/* Maximize Button - Green */}
+          <div 
+            onClick={handleMaximize}
+            className="w-3 h-3 rounded-full bg-[#27c93f] border border-[#1aab29] flex items-center justify-center cursor-pointer hover:bg-[#27c93f]/80 active:bg-[#1d8a2b] transition-colors"
+          >
+            <span className="opacity-0 group-hover:opacity-100 text-[6px] font-bold text-[#0a4010] leading-none mt-[1px]">sw</span>
+          </div>
+        </div>
+      </div>
+      
       <Sider 
         trigger={null} 
         collapsible 

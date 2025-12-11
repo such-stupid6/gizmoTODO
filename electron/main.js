@@ -22,7 +22,12 @@ const isDev = process.env.NODE_ENV === 'development';
 // 针对 Linux 平台添加 --no-sandbox 参数
 if (process.platform === 'linux') {
   app.commandLine.appendSwitch('no-sandbox');
-  app.commandLine.appendSwitch('disable-dev-shm-usage');
+  // 禁用 GPU 加速，解决 WSL 下 /dev/shm 共享内存错误和鼠标点击偏移问题
+  app.commandLine.appendSwitch('disable-gpu');
+  app.commandLine.appendSwitch('disable-software-rasterizer');
+} else {
+  // Windows/macOS 不需要这些补丁，移除它们以获得最佳性能
+  // 保持默认 GPU 加速开启
 }
 
 function createWindow() {
@@ -33,6 +38,24 @@ function createWindow() {
       nodeIntegration: true,
       contextIsolation: false, // 为了简化迁移，先关闭隔离，后续建议开启并使用 preload
     },
+    frame: false, // 完全无边框，自己绘制红绿灯
+    transparent: true, // 允许透明背景，实现圆角
+    backgroundColor: '#00000000', // 透明背景色
+  });
+
+  mainWindow.setMenu(null); // 完全移除菜单栏
+
+  // IPC 监听：窗口控制
+  import('electron').then(({ ipcMain }) => {
+    ipcMain.on('window-minimize', () => mainWindow.minimize());
+    ipcMain.on('window-maximize', () => {
+      if (mainWindow.isMaximized()) {
+        mainWindow.unmaximize();
+      } else {
+        mainWindow.maximize();
+      }
+    });
+    ipcMain.on('window-close', () => mainWindow.close());
   });
 
   if (isDev) {
