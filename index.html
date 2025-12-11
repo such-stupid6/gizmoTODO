@@ -1,84 +1,13 @@
-<!DOCTYPE html>
-<html lang="zh">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>gizmoTODO</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div class="app-container">
-        <!-- 左侧分类面板 -->
-        <div id="categoriesPanel" class="categories-panel">
-            <div class="categories-header">
-                <h2>分类</h2>
-                <!-- 汉堡菜单按钮 -->
-                <div id="togglePanel" class="toggle-panel">
-                    <div class="hamburger-icon">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </div>
-                </div>
-            </div>
-            <ul id="categoryList">
-                <li class="category active" data-category="all">全部</li>
-                <!-- 动态添加的分类将显示在这里 -->
-            </ul>
-            <button id="addCategory" class="secondary-button">添加分类</button>
-        </div>
-        
-        <!-- 右侧待办事项内容 -->
-        <div class="content-panel">
-            <div class="toolbar">
-                <h2 id="currentCategory">全部</h2>
-                <button id="addTodo">添加待办</button>
-            </div>
-            <ul id="todoList"></ul>
-        </div>
-    </div>
-
-    <!-- 添加待办事项对话框 -->
-    <dialog id="dialog">
-        <form method="dialog">
-            <h2>添加新待办事项</h2>
-            <div class="form-group">
-                <label for="todoInput">待办事项:</label>
-                <input type="text" id="todoInput" placeholder="输入待办事项内容...">
-            </div>
-            <div class="form-group">
-                <label for="deadLine">截止日期:</label>
-                <input type="datetime-local" id="deadLine">
-            </div>
-            <!-- 隐藏分类选择器，但保留它以便在后台使用 -->
-            <div class="form-group" style="display: none;">
-                <label for="todoCategory">分类:</label>
-                <select id="todoCategory">
-                    <!-- 动态填充分类选项 -->
-                </select>
-            </div>
-            <div class="button-group">
-                <button id="cancelButton" type="button">取消</button>
-                <button id="confirmButton" type="button">确认</button>
-            </div>
-        </form>
-    </dialog>
-
-    <!-- 添加分类对话框 -->
-    <dialog id="categoryDialog">
-        <form method="dialog">
-            <h2>添加新分类</h2>
-            <div class="form-group">
-                <label for="categoryInput">分类名称:</label>
-                <input type="text" id="categoryInput" placeholder="输入分类名称...">
-            </div>
-            <div class="button-group">
-                <button id="cancelCategoryButton" type="button">取消</button>
-                <button id="confirmCategoryButton" type="button">确认</button>
-            </div>
-        </form>
-    </dialog>
-
-    <script src="renderer.js"></script>
-</body>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>promodoro-todo</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
