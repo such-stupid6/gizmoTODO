@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, Checkbox, Button, Typography, Tag } from 'antd';
-import { DeleteOutlined, CalendarOutlined, PlayCircleOutlined } from '@ant-design/icons';
+import { DeleteOutlined, CalendarOutlined, PlayCircleOutlined, FieldTimeOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
 const { Text } = Typography;
@@ -73,6 +73,12 @@ const TodoItem = ({ item, toggleTodoCompletion, handleDeleteTodo, handleStartPom
                     <div className="flex items-center mt-1 text-xs text-gray-500">
                         <CalendarOutlined className="mr-1" />
                         {formatDeadline(item.deadline)}
+                    </div>
+                )}
+                {item.totalFocusTime > 0 && (
+                    <div className="flex items-center mt-1 text-xs text-blue-500">
+                        <FieldTimeOutlined className="mr-1" />
+                        已专注: {item.totalFocusTime} 分钟
                     </div>
                 )}
             </div>

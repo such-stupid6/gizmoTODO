@@ -8,6 +8,7 @@ import TodoItem from './components/TodoItem';
 import AddTodoModal from './components/AddTodoModal';
 import AddCategoryModal from './components/AddCategoryModal';
 import PomodoroView from './components/PomodoroView';
+import SettingsModal from './components/SettingsModal';
 import { generateMockData } from './mock/data';
 
 // Helper for IPC
@@ -20,7 +21,10 @@ const getIpcRenderer = () => {
         console.error('Electron IPC not available:', e);
       }
     }
-    return { send: (channel) => console.log(`IPC send: ${channel}`) };
+    return { 
+        send: (channel) => console.log(`IPC send: ${channel}`),
+        invoke: (channel) => { console.log(`IPC invoke: ${channel}`); return Promise.resolve(null); }
+    };
 };
 const ipcRenderer = getIpcRenderer();
 
@@ -64,79 +68,134 @@ function App() {
   const [collapsed, setCollapsed] = useState(false);
   const [isTodoModalOpen, setIsTodoModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isMiniMode, setIsMiniMode] = useState(false);
   const [activePomodoroItem, setActivePomodoroItem] = useState(null);
   const [newTodoText, setNewTodoText] = useState('');
   const [newTodoDeadline, setNewTodoDeadline] = useState(null);
   const [newCategoryName, setNewCategoryName] = useState('');
   
+  // Default settings
+  const [settings, setSettings] = useState({
+    pomodoro: {
+      focusTime: 25,
+      breakTime: 5
+    }
+  });
+  
   const [messageApi, contextHolder] = message.useMessage();
 
   useEffect(() => {
-    // Load state from local storage
-    const savedPanelState = localStorage.getItem('categoryPanelCollapsed') === 'true';
-    setCollapsed(savedPanelState);
+    const loadData = async () => {
+        try {
+            // Load from Electron Store via IPC
+            let savedPanelState = await ipcRenderer.invoke('store-get', 'categoryPanelCollapsed');
+            let savedSettings = await ipcRenderer.invoke('store-get', 'appSettings');
+            let savedCategories = await ipcRenderer.invoke('store-get', 'categories');
+            let savedTodos = await ipcRenderer.invoke('store-get', 'todos');
 
-    const savedCategories = localStorage.getItem('categories');
-    const savedTodos = localStorage.getItem('todos');
+            // MIGRATION: Check LocalStorage if Store is empty
+            if (!savedCategories && !savedTodos) {
+                const lsCategories = localStorage.getItem('categories');
+                const lsTodos = localStorage.getItem('todos');
+                
+                if (lsCategories || lsTodos) {
+                    console.log('Migrating from LocalStorage to Electron Store...');
+                    if (lsCategories) {
+                        savedCategories = JSON.parse(lsCategories);
+                        ipcRenderer.send('store-set', 'categories', savedCategories);
+                    }
+                    if (lsTodos) {
+                        savedTodos = JSON.parse(lsTodos);
+                        ipcRenderer.send('store-set', 'todos', savedTodos);
+                    }
+                    
+                    const lsSettings = localStorage.getItem('appSettings');
+                    if (lsSettings) {
+                        savedSettings = JSON.parse(lsSettings);
+                        ipcRenderer.send('store-set', 'appSettings', savedSettings);
+                    }
+                    
+                    const lsPanel = localStorage.getItem('categoryPanelCollapsed');
+                    if (lsPanel) {
+                        savedPanelState = lsPanel === 'true';
+                        ipcRenderer.send('store-set', 'categoryPanelCollapsed', savedPanelState);
+                    }
+                }
+            }
 
-    if (savedCategories && savedTodos) {
-      try {
-        const loadedCategories = JSON.parse(savedCategories);
-        // Check if data is in new tree format (objects with key) or legacy (strings)
-        const isLegacy = Array.isArray(loadedCategories) && loadedCategories.length > 0 && typeof loadedCategories[0] === 'string';
-        
-        // Also check if it's just the default empty root (which means user hasn't really created anything useful yet)
-        const isEmptyRoot = Array.isArray(loadedCategories) && loadedCategories.length === 1 && loadedCategories[0].key === 'root' && (!loadedCategories[0].children || loadedCategories[0].children.length === 0);
+            // Apply Data
+            if (savedPanelState !== undefined && savedPanelState !== null) {
+                setCollapsed(savedPanelState);
+            }
 
-        if (isLegacy || isEmptyRoot) {
-            // If legacy or empty default, force load mock data to demonstrate new features as requested
-            console.log('Legacy or Empty data detected, migrating to Mock Data for Tree View demonstration');
-            throw new Error('Legacy or Empty Format');
+            if (savedSettings && Object.keys(savedSettings).length > 0) {
+                setSettings(prev => ({
+                    ...prev,
+                    ...savedSettings,
+                    pomodoro: {
+                        ...prev.pomodoro,
+                        ...(savedSettings.pomodoro || {})
+                    }
+                }));
+            }
+
+            if (savedCategories && savedTodos) {
+                // Legacy check for categories (if migration brought over old format)
+                const isLegacy = Array.isArray(savedCategories) && savedCategories.length > 0 && typeof savedCategories[0] === 'string';
+                
+                // Empty Root Check: if it's just the default empty root and no todos
+                const isEmptyRoot = Array.isArray(savedCategories) && savedCategories.length === 1 && savedCategories[0].key === 'root' && (!savedCategories[0].children || savedCategories[0].children.length === 0) && (!savedTodos || savedTodos.length === 0);
+
+                if (isLegacy || isEmptyRoot) {
+                    console.log('Legacy or Empty data detected, triggering Mock Data generation');
+                    throw new Error('Legacy or Empty Format');
+                }
+
+                setCategories(savedCategories);
+                setTodoItems(savedTodos.map(item => ({
+                    ...item,
+                    deadline: item.deadline ? new Date(item.deadline) : null
+                })));
+            } else {
+                // Initialize with Mock Data
+                const { categories: mockCats, todos: mockTodos } = generateMockData();
+                setCategories(mockCats);
+                setTodoItems(mockTodos.map(item => ({
+                    ...item,
+                    deadline: item.deadline ? new Date(item.deadline) : null
+                })));
+                ipcRenderer.send('store-set', 'categories', mockCats);
+                ipcRenderer.send('store-set', 'todos', mockTodos);
+            }
+
+        } catch (e) {
+            console.error('Data loading error or reset:', e);
+            const { categories: mockCats, todos: mockTodos } = generateMockData();
+            setCategories(mockCats);
+            setTodoItems(mockTodos.map(item => ({
+                ...item,
+                deadline: item.deadline ? new Date(item.deadline) : null
+            })));
         }
+    };
 
-        setCategories(loadedCategories);
-        setTodoItems(JSON.parse(savedTodos).map(item => ({
-            ...item,
-            deadline: item.deadline ? new Date(item.deadline) : null
-        })));
-      } catch (e) {
-        console.log('Resetting to Mock Data due to format change or error');
-        const { categories: mockCats, todos: mockTodos } = generateMockData();
-        setCategories(mockCats);
-        setTodoItems(mockTodos.map(item => ({
-            ...item,
-            deadline: item.deadline ? new Date(item.deadline) : null
-        })));
-        localStorage.setItem('categories', JSON.stringify(mockCats));
-        localStorage.setItem('todos', JSON.stringify(mockTodos));
-      }
-    } else {
-      // Load Mock Data if empty
-      const { categories: mockCats, todos: mockTodos } = generateMockData();
-      setCategories(mockCats);
-      setTodoItems(mockTodos.map(item => ({
-          ...item,
-          deadline: item.deadline ? new Date(item.deadline) : null
-      })));
-      localStorage.setItem('categories', JSON.stringify(mockCats));
-      localStorage.setItem('todos', JSON.stringify(mockTodos));
-    }
+    loadData();
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('categoryPanelCollapsed', collapsed);
+    ipcRenderer.send('store-set', 'categoryPanelCollapsed', collapsed);
   }, [collapsed]);
 
   useEffect(() => {
-    localStorage.setItem('categories', JSON.stringify(categories));
+    ipcRenderer.send('store-set', 'categories', categories);
   }, [categories]);
 
   useEffect(() => {
-    localStorage.setItem('todos', JSON.stringify(todoItems.map(item => ({
+    ipcRenderer.send('store-set', 'todos', todoItems.map(item => ({
       ...item,
       deadline: item.deadline ? item.deadline.toISOString() : null
-    }))));
+    })));
   }, [todoItems]);
 
   const handleAddTodo = () => {
@@ -255,6 +314,43 @@ function App() {
     });
   };
 
+  // Save settings
+  const handleSaveSettings = (newSettings) => {
+    // Ensure numbers to prevent string/number mismatch issues
+    if (newSettings.pomodoro) {
+        if (newSettings.pomodoro.focusTime) newSettings.pomodoro.focusTime = Number(newSettings.pomodoro.focusTime);
+        if (newSettings.pomodoro.breakTime) newSettings.pomodoro.breakTime = Number(newSettings.pomodoro.breakTime);
+    }
+
+    setSettings(prev => {
+        const mergedSettings = {
+            ...prev,
+            ...newSettings,
+            pomodoro: {
+                ...prev.pomodoro,
+                ...(newSettings.pomodoro || {})
+            }
+        };
+        ipcRenderer.send('store-set', 'appSettings', mergedSettings);
+        return mergedSettings;
+    });
+    messageApi.success('设置已保存');
+  };
+
+  // Update todo focus time
+  const updateTodoFocusTime = (todoId, minutesToAdd) => {
+    const updatedTodos = todoItems.map(item => {
+      if (item.id === todoId) {
+        return {
+          ...item,
+          totalFocusTime: (item.totalFocusTime || 0) + minutesToAdd
+        };
+      }
+      return item;
+    });
+    setTodoItems(updatedTodos);
+  };
+
   const handleStartPomodoro = (item) => {
     setActivePomodoroItem(item);
     setIsMiniMode(true);
@@ -292,6 +388,8 @@ function App() {
           <PomodoroView 
             todoItem={activePomodoroItem} 
             onClose={handleClosePomodoro} 
+            settings={settings}
+            onUpdateFocusTime={updateTodoFocusTime}
           />
       );
   }
@@ -299,6 +397,13 @@ function App() {
   return (
     <Layout className="h-screen overflow-hidden rounded-xl bg-transparent shadow-2xl border border-gray-200/50">
       {contextHolder}
+      
+      <SettingsModal 
+        open={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+        settings={settings}
+        onSave={handleSaveSettings}
+      />
       
       <Sidebar 
         collapsed={collapsed}
@@ -308,6 +413,7 @@ function App() {
         setCurrentCategory={setCurrentCategory}
         handleDeleteCategory={handleDeleteCategory}
         setIsCategoryModalOpen={setIsCategoryModalOpen}
+        openSettings={() => setIsSettingsModalOpen(true)}
       />
       
       <Layout className="bg-white">

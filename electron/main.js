@@ -1,6 +1,10 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import Store from 'electron-store';
+
+Store.initRenderer();
+const store = new Store();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -64,6 +68,17 @@ function createWindow() {
     }
   });
   ipcMain.on('window-close', () => mainWindow.close());
+
+  // Store IPC
+  ipcMain.handle('store-get', (event, key) => {
+    return store.get(key);
+  });
+  ipcMain.on('store-set', (event, key, value) => {
+    store.set(key, value);
+  });
+  ipcMain.on('store-delete', (event, key) => {
+    store.delete(key);
+  });
 
   // Mini Mode IPC
   ipcMain.on('enter-mini-mode', () => {
