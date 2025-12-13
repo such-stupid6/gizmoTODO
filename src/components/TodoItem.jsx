@@ -1,11 +1,11 @@
 import React from 'react';
 import { Card, Checkbox, Button, Typography, Tag } from 'antd';
-import { DeleteOutlined, CalendarOutlined } from '@ant-design/icons';
+import { DeleteOutlined, CalendarOutlined, PlayCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
 const { Text } = Typography;
 
-const TodoItem = ({ item, toggleTodoCompletion, handleDeleteTodo }) => {
+const TodoItem = ({ item, toggleTodoCompletion, handleDeleteTodo, handleStartPomodoro }) => {
   const formatDeadline = (date) => {
     if (!date) return '';
     const now = new Date();
@@ -59,12 +59,11 @@ const TodoItem = ({ item, toggleTodoCompletion, handleDeleteTodo }) => {
         style={getCardStyle(item.deadline, item.completed)}
         onClick={() => toggleTodoCompletion(item.id)}
     >
-        <div className="flex items-center flex-1">
+        <div className="flex items-center flex-1 gap-4">
             <Checkbox 
                 checked={item.completed} 
                 onChange={() => toggleTodoCompletion(item.id)}
                 onClick={(e) => e.stopPropagation()}
-                className="mr-3"
             />
             <div className={`flex flex-col ${item.completed ? 'line-through text-gray-400' : ''}`}>
                 <Text delete={item.completed} strong={!item.completed} className="text-base">
@@ -81,6 +80,17 @@ const TodoItem = ({ item, toggleTodoCompletion, handleDeleteTodo }) => {
         
         <div className="flex items-center gap-2">
             {getUrgencyTag(item.deadline, item.completed)}
+            {!item.completed && (
+                <Button 
+                    type="text" 
+                    icon={<PlayCircleOutlined />} 
+                    className="text-gray-400 hover:text-blue-500 flex items-center justify-center"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleStartPomodoro(item);
+                    }}
+                />
+            )}
             <Button 
                 type="text" 
                 danger 

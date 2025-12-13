@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -45,17 +45,51 @@ function createWindow() {
 
   mainWindow.setMenu(null); // 完全移除菜单栏
 
+  // Store original window size
+  let originalSize = [900, 600];
+  let isMiniMode = false;
+
+  // 跟踪最大化状态，解决部分透明窗口下 isMaximized() 判断不准确的问题
+  let isWindowMaximized = false;
+  mainWindow.on('maximize', () => { isWindowMaximized = true; });
+  mainWindow.on('unmaximize', () => { isWindowMaximized = false; });
+
   // IPC 监听：窗口控制
-  import('electron').then(({ ipcMain }) => {
-    ipcMain.on('window-minimize', () => mainWindow.minimize());
-    ipcMain.on('window-maximize', () => {
-      if (mainWindow.isMaximized()) {
-        mainWindow.unmaximize();
-      } else {
-        mainWindow.maximize();
-      }
-    });
-    ipcMain.on('window-close', () => mainWindow.close());
+  ipcMain.on('window-minimize', () => mainWindow.minimize());
+  ipcMain.on('window-maximize', () => {
+    if (isWindowMaximized) {
+      mainWindow.unmaximize();
+    } else {
+      mainWindow.maximize();
+    }
+  });
+  ipcMain.on('window-close', () => mainWindow.close());
+
+  // Mini Mode IPC
+  ipcMain.on('enter-mini-mode', () => {
+    console.log('IPC: enter-mini-mode');
+    if (isMiniMode) return;
+    
+    isMiniMode = true;
+    originalSize = mainWindow.getSize();
+    console.log('Saving original size:', originalSize);
+    
+    // 允许缩小到更小尺寸
+    mainWindow.setMinimumSize(100, 100);
+    mainWindow.setSize(180, 180);
+    mainWindow.setAlwaysOnTop(true);
+  });
+
+  ipcMain.on('leave-mini-mode', () => {
+    console.log('IPC: leave-mini-mode');
+    if (!isMiniMode) return;
+    
+    isMiniMode = false;
+    // 恢复正常大小
+    mainWindow.setSize(originalSize[0], originalSize[1]);
+    mainWindow.setMinimumSize(400, 300); // 恢复合理的最小尺寸限制
+    mainWindow.setAlwaysOnTop(false);
+    mainWindow.center();
   });
 
   if (isDev) {
