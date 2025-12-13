@@ -1,18 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Layout, Menu, Button, List, Modal, Input, DatePicker, Typography, Tag, Empty, Card, Checkbox, message } from 'antd';
-import { 
-  PlusOutlined, 
-  MenuUnfoldOutlined, 
-  MenuFoldOutlined, 
-  DeleteOutlined, 
-  CalendarOutlined,
-  AppstoreOutlined
-} from '@ant-design/icons';
-import dayjs from 'dayjs';
+import { Layout, Button, List, Typography, Empty, Modal, message } from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
 import './App.css';
 
-const { Header, Sider, Content } = Layout;
-const { Title, Text } = Typography;
+import Sidebar from './components/Sidebar';
+import TodoItem from './components/TodoItem';
+import AddTodoModal from './components/AddTodoModal';
+import AddCategoryModal from './components/AddCategoryModal';
+
+const { Header, Content } = Layout;
+const { Title } = Typography;
 
 function App() {
   const [todoItems, setTodoItems] = useState([]);
@@ -72,51 +69,6 @@ function App() {
       deadline: item.deadline ? item.deadline.toISOString() : null
     }))));
   }, [todoItems]);
-
-  const formatDeadline = (date) => {
-    if (!date) return '';
-    const now = new Date();
-    const diffTime = date - now;
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-    const dateStr = dayjs(date).format('MM月DD日 HH:mm');
-
-    if (diffDays === 0) {
-      return `${dateStr} (今天)`;
-    } else if (diffDays === 1) {
-      return `${dateStr} (明天)`;
-    } else if (diffDays > 1 && diffDays < 7) {
-      return `${dateStr} (${diffDays}天后)`;
-    }
-    return dateStr;
-  };
-
-  const getUrgencyTag = (deadline, completed) => {
-    if (completed || !deadline) return null;
-
-    const now = new Date();
-    const diffTime = deadline - now;
-    const diffDays = diffTime / (1000 * 60 * 60 * 24);
-
-    if (diffTime < 0) return <Tag color="error">已过期</Tag>;
-    if (diffDays < 1) return <Tag color="warning">紧急</Tag>;
-    if (diffDays < 3) return <Tag color="gold">即将到期</Tag>;
-    return null;
-  };
-  
-  const getCardStyle = (deadline, completed) => {
-      if (completed) return { opacity: 0.6, background: '#f5f5f5' };
-      if (!deadline) return {};
-      
-      const now = new Date();
-      const diffTime = deadline - now;
-      const diffDays = diffTime / (1000 * 60 * 60 * 24);
-      
-      if (diffTime < 0) return { borderLeft: '5px solid #ff4d4f' };
-      if (diffDays < 1) return { borderLeft: '5px solid #fa8c16' };
-      if (diffDays < 3) return { borderLeft: '5px solid #faad14' };
-      return { borderLeft: '5px solid #d9d9d9' };
-  };
 
   const handleAddTodo = () => {
     const todoText = newTodoText.trim();
@@ -211,125 +163,19 @@ function App() {
       return a.deadline - b.deadline;
     });
 
-  const menuItems = [
-    {
-      key: 'all',
-      icon: <AppstoreOutlined />,
-      label: '全部',
-    },
-    ...categories.map(cat => ({
-      key: cat,
-      label: (
-        <div className="flex justify-between items-center group w-full">
-          <span>{cat}</span>
-          <Button 
-            type="text" 
-            size="small" 
-            danger
-            icon={<DeleteOutlined />} 
-            className="opacity-0 group-hover:opacity-100"
-            onClick={(e) => handleDeleteCategory(cat, e)}
-          />
-        </div>
-      ),
-    })),
-    {
-        key: 'add_new_category_btn',
-        label: <Button type="dashed" block icon={<PlusOutlined />} onClick={() => setIsCategoryModalOpen(true)}>添加分类</Button>,
-        disabled: true,
-        className: "!cursor-default !bg-transparent hover:!bg-transparent !p-0 !h-auto !mb-0"
-    }
-  ];
-
-  const handleMinimize = () => {
-    if (window.require) {
-      const { ipcRenderer } = window.require('electron');
-      ipcRenderer.send('window-minimize');
-    }
-  };
-
-  const handleMaximize = () => {
-    if (window.require) {
-      const { ipcRenderer } = window.require('electron');
-      ipcRenderer.send('window-maximize');
-    }
-  };
-
-  const handleClose = () => {
-    if (window.require) {
-      const { ipcRenderer } = window.require('electron');
-      ipcRenderer.send('window-close');
-    }
-  };
-
   return (
     <Layout className="h-screen overflow-hidden rounded-xl bg-transparent shadow-2xl border border-gray-200/50">
       {contextHolder}
       
-      <Sider 
-        trigger={null} 
-        collapsible 
-        collapsed={collapsed} 
-        theme="light"
-        width={250}
-        className="border-r border-gray-200 bg-gray-50/50"
-      >
-        {/* macOS 风格红绿灯区域 */}
-        <div className="h-[40px] flex items-center px-4" style={{ WebkitAppRegion: 'drag' }}>
-            <div className="flex gap-2" style={{ WebkitAppRegion: 'no-drag' }}>
-            {/* Close Button - Red */}
-            <div 
-                onClick={handleClose}
-                className="w-3 h-3 rounded-full bg-[#ff5f56] border border-[#e0443e] flex items-center justify-center cursor-pointer hover:bg-[#ff5f56]/80 active:bg-[#bf403a] transition-colors group"
-            >
-                <svg width="7" height="7" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <path d="M2.5 2.5L7.5 7.5M7.5 2.5L2.5 7.5" stroke="#4c0000" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-            </div>
-            {/* Minimize Button - Yellow */}
-            <div 
-                onClick={handleMinimize}
-                className="w-3 h-3 rounded-full bg-[#ffbd2e] border border-[#dea123] flex items-center justify-center cursor-pointer hover:bg-[#ffbd2e]/80 active:bg-[#bf8e22] transition-colors group"
-            >
-                <svg width="7" height="7" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <path d="M2 5H8" stroke="#995700" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-            </div>
-            {/* Maximize Button - Green */}
-            <div 
-                onClick={handleMaximize}
-                className="w-3 h-3 rounded-full bg-[#27c93f] border border-[#1aab29] flex items-center justify-center cursor-pointer hover:bg-[#27c93f]/80 active:bg-[#1d8a2b] transition-colors group"
-            >
-                <svg width="6" height="6" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <path d="M1.5 8.5v-4M1.5 8.5h4M1.5 8.5l4-4M8.5 1.5v4M8.5 1.5h-4M8.5 1.5l-4 4" stroke="#006500" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-            </div>
-            </div>
-        </div>
-
-        <div className="flex items-center justify-between px-4 pb-4 border-b border-gray-100">
-          {!collapsed && <Title level={4} style={{ margin: 0 }}>分类</Title>}
-          <Button
-            type="text"
-            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-            onClick={() => setCollapsed(!collapsed)}
-            className="ml-auto"
-          />
-        </div>
-        
-        <Menu
-          mode="inline"
-          selectedKeys={[currentCategory]}
-          items={menuItems}
-          onClick={({ key }) => {
-              if (key !== 'add_new_category_btn') {
-                  setCurrentCategory(key);
-              }
-          }}
-          className="border-none"
-          style={{ height: 'calc(100% - 65px)', overflowY: 'auto' }}
-        />
-      </Sider>
+      <Sidebar 
+        collapsed={collapsed}
+        setCollapsed={setCollapsed}
+        categories={categories}
+        currentCategory={currentCategory}
+        setCurrentCategory={setCurrentCategory}
+        handleDeleteCategory={handleDeleteCategory}
+        setIsCategoryModalOpen={setIsCategoryModalOpen}
+      />
       
       <Layout className="bg-white">
         <Header className="bg-white px-6 border-b border-gray-200 flex items-center justify-between h-[64px]" style={{ WebkitAppRegion: 'drag' }}>
@@ -356,46 +202,11 @@ function App() {
               dataSource={filteredTodos}
               renderItem={item => (
                 <List.Item className="p-0 border-0 mb-3">
-                    <Card 
-                        hoverable
-                        bodyStyle={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-                        className="w-full"
-                        style={getCardStyle(item.deadline, item.completed)}
-                        onClick={() => toggleTodoCompletion(item.id)}
-                    >
-                        <div className="flex items-center flex-1">
-                            <Checkbox 
-                                checked={item.completed} 
-                                onChange={() => toggleTodoCompletion(item.id)}
-                                onClick={(e) => e.stopPropagation()}
-                                className="mr-3"
-                            />
-                            <div className={`flex flex-col ${item.completed ? 'line-through text-gray-400' : ''}`}>
-                                <Text delete={item.completed} strong={!item.completed} className="text-base">
-                                    {item.text}
-                                </Text>
-                                {item.deadline && (
-                                    <div className="flex items-center mt-1 text-xs text-gray-500">
-                                        <CalendarOutlined className="mr-1" />
-                                        {formatDeadline(item.deadline)}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                            {getUrgencyTag(item.deadline, item.completed)}
-                            <Button 
-                                type="text" 
-                                danger 
-                                icon={<DeleteOutlined />} 
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteTodo(item.id);
-                                }}
-                            />
-                        </div>
-                    </Card>
+                    <TodoItem 
+                        item={item} 
+                        toggleTodoCompletion={toggleTodoCompletion} 
+                        handleDeleteTodo={handleDeleteTodo} 
+                    />
                 </List.Item>
               )}
             />
@@ -403,62 +214,23 @@ function App() {
         </Content>
       </Layout>
 
-      {/* Add Todo Modal */}
-      <Modal
-        title="添加新待办事项"
-        open={isTodoModalOpen}
-        onOk={handleAddTodo}
-        onCancel={() => setIsTodoModalOpen(false)}
-        okText="确认"
-        cancelText="取消"
-        okButtonProps={{ className: 'bg-[#28a745] hover:!bg-[#218838]' }}
-      >
-        <div className="flex flex-col gap-4 py-4">
-            <div>
-                <div className="mb-2 font-bold">待办事项:</div>
-                <Input 
-                    placeholder="输入待办事项内容..." 
-                    value={newTodoText} 
-                    onChange={e => setNewTodoText(e.target.value)}
-                    onPressEnter={handleAddTodo}
-                />
-            </div>
-            <div>
-                <div className="mb-2 font-bold">截止日期:</div>
-                <DatePicker 
-                    showTime 
-                    className="w-full" 
-                    placeholder="选择截止日期和时间"
-                    value={newTodoDeadline}
-                    onChange={date => setNewTodoDeadline(date)}
-                    format="YYYY-MM-DD HH:mm"
-                />
-            </div>
-        </div>
-      </Modal>
+      <AddTodoModal 
+        isTodoModalOpen={isTodoModalOpen}
+        setIsTodoModalOpen={setIsTodoModalOpen}
+        handleAddTodo={handleAddTodo}
+        newTodoText={newTodoText}
+        setNewTodoText={setNewTodoText}
+        newTodoDeadline={newTodoDeadline}
+        setNewTodoDeadline={setNewTodoDeadline}
+      />
 
-      {/* Add Category Modal */}
-      <Modal
-        title="添加新分类"
-        open={isCategoryModalOpen}
-        onOk={handleAddCategory}
-        onCancel={() => setIsCategoryModalOpen(false)}
-        okText="确认"
-        cancelText="取消"
-        okButtonProps={{ className: 'bg-[#28a745] hover:!bg-[#218838]' }}
-      >
-        <div className="flex flex-col gap-4 py-4">
-            <div>
-                <div className="mb-2 font-bold">分类名称:</div>
-                <Input 
-                    placeholder="输入分类名称..." 
-                    value={newCategoryName} 
-                    onChange={e => setNewCategoryName(e.target.value)}
-                    onPressEnter={handleAddCategory}
-                />
-            </div>
-        </div>
-      </Modal>
+      <AddCategoryModal 
+        isCategoryModalOpen={isCategoryModalOpen}
+        setIsCategoryModalOpen={setIsCategoryModalOpen}
+        handleAddCategory={handleAddCategory}
+        newCategoryName={newCategoryName}
+        setNewCategoryName={setNewCategoryName}
+      />
     </Layout>
   );
 }
