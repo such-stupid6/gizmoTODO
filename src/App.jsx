@@ -7,6 +7,7 @@ import Sidebar from './components/Sidebar';
 import TodoItem from './components/TodoItem';
 import AddTodoModal from './components/AddTodoModal';
 import AddCategoryModal from './components/AddCategoryModal';
+import RenameCategoryModal from './components/RenameCategoryModal';
 import PomodoroView from './components/PomodoroView';
 import SettingsModal from './components/SettingsModal';
 import { generateMockData } from './mock/data';
@@ -74,6 +75,8 @@ function App() {
   const [newTodoText, setNewTodoText] = useState('');
   const [newTodoDeadline, setNewTodoDeadline] = useState(null);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
+  const [renamingCategory, setRenamingCategory] = useState(null);
   
   // Default settings
   const [settings, setSettings] = useState({
@@ -281,6 +284,32 @@ function App() {
     messageApi.success('子分类添加成功');
   };
 
+  const handleRenameCategory = (newName) => {
+    const name = newName.trim();
+    if (!name) {
+      messageApi.warning('请输入分类名称');
+      return;
+    }
+    
+    if (!renamingCategory) return;
+
+    const updateNode = (nodes, key, title) => {
+      return nodes.map(node => {
+        if (node.key === key) {
+          return { ...node, title };
+        }
+        if (node.children) {
+          return { ...node, children: updateNode(node.children, key, title) };
+        }
+        return node;
+      });
+    };
+
+    const updatedCategories = updateNode(categories, renamingCategory.key, name);
+    setCategories(updatedCategories);
+    messageApi.success('分类重命名成功');
+  };
+
   const handleDeleteCategory = (key) => {
     Modal.confirm({
         title: '确认删除',
@@ -414,6 +443,10 @@ function App() {
         handleDeleteCategory={handleDeleteCategory}
         setIsCategoryModalOpen={setIsCategoryModalOpen}
         openSettings={() => setIsSettingsModalOpen(true)}
+        onRenameCategory={(node) => {
+          setRenamingCategory(node);
+          setIsRenameModalOpen(true);
+        }}
       />
       
       <Layout className="bg-white">
@@ -433,7 +466,7 @@ function App() {
           </div>
         </Header>
         
-        <Content className="p-6 overflow-y-auto bg-gray-50">
+        <Content className="p-6 overflow-auto bg-white flex flex-col">
           {filteredTodos.length === 0 ? (
             <Empty description="暂无待办事项" className="mt-12" />
           ) : (
@@ -470,6 +503,13 @@ function App() {
         handleAddCategory={handleAddCategory}
         newCategoryName={newCategoryName}
         setNewCategoryName={setNewCategoryName}
+      />
+
+      <RenameCategoryModal
+        isModalOpen={isRenameModalOpen}
+        setIsModalOpen={setIsRenameModalOpen}
+        handleRename={handleRenameCategory}
+        initialName={renamingCategory?.title || ''}
       />
     </Layout>
   );

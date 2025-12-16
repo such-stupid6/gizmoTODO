@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layout, Tree, Button, Typography, Tooltip } from 'antd';
+import { Layout, Tree, Button, Typography, Tooltip, Dropdown } from 'antd';
 import { 
   MenuUnfoldOutlined, 
   MenuFoldOutlined, 
@@ -8,7 +8,8 @@ import {
   FolderOutlined,
   FolderOpenOutlined,
   AppstoreOutlined,
-  SettingOutlined
+  SettingOutlined,
+  EditOutlined
 } from '@ant-design/icons';
 import TrafficLights from './TrafficLights';
 
@@ -24,68 +25,47 @@ const Sidebar = ({
   setCurrentCategory, 
   handleDeleteCategory, 
   setIsCategoryModalOpen,
-  openSettings
+  openSettings,
+  onRenameCategory
 }) => {
   
   const renderTitle = (node) => {
     const isRoot = node.key === 'root';
+    
+    const items = [
+      {
+        key: 'add',
+        label: '添加子分类',
+        icon: <PlusOutlined />,
+        onClick: () => {
+          setCurrentCategory(node.key);
+          setIsCategoryModalOpen(true);
+        }
+      },
+      !isRoot && {
+        key: 'rename',
+        label: '重命名',
+        icon: <EditOutlined />,
+        onClick: () => onRenameCategory(node)
+      },
+      !isRoot && {
+        key: 'delete',
+        label: '删除',
+        icon: <DeleteOutlined />,
+        danger: true,
+        onClick: () => handleDeleteCategory(node.key)
+      }
+    ].filter(Boolean);
+
     return (
-      <div className="flex items-center group w-full pr-2 overflow-hidden">
-        <span className="mr-2 text-gray-500 shrink-0 flex items-center">
-            {isRoot ? <AppstoreOutlined /> : <FolderOutlined />}
-        </span>
-        <span className="truncate flex-1" title={node.title}>{node.title}</span>
-        {!isRoot && (
-            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-2">
-                 {/* Add Subcategory Button - actually just opens modal, assumes current category is selected? 
-                     We should probably select it when clicking this if it's not selected.
-                     But to avoid conflict, let's just use the global Add button context. 
-                     Wait, if I click + here, I expect to add to THIS node.
-                     So I should update currentCategory to this node.
-                 */}
-                <Tooltip title="添加子分类">
-                    <Button 
-                        type="text" 
-                        size="small" 
-                        icon={<PlusOutlined />} 
-                        className="!w-5 !h-5 !min-w-0 flex items-center justify-center text-gray-500 hover:text-green-600"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setCurrentCategory(node.key);
-                            setIsCategoryModalOpen(true);
-                        }}
-                    />
-                </Tooltip>
-                <Tooltip title="删除">
-                    <Button 
-                        type="text" 
-                        size="small" 
-                        danger
-                        icon={<DeleteOutlined />} 
-                        className="!w-5 !h-5 !min-w-0 flex items-center justify-center"
-                        onClick={(e) => handleDeleteCategory(node.key, e)}
-                    />
-                </Tooltip>
-            </div>
-        )}
-        {isRoot && (
-             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Tooltip title="添加子分类">
-                    <Button 
-                        type="text" 
-                        size="small" 
-                        icon={<PlusOutlined />} 
-                        className="!w-5 !h-5 !min-w-0 flex items-center justify-center text-gray-500 hover:text-green-600"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setCurrentCategory(node.key);
-                            setIsCategoryModalOpen(true);
-                        }}
-                    />
-                </Tooltip>
-             </div>
-        )}
-      </div>
+      <Dropdown menu={{ items }} trigger={['contextMenu']}>
+        <div className="flex items-center group w-full pr-2 overflow-hidden">
+          <span className="mr-2 text-gray-500 shrink-0 flex items-center">
+              {isRoot ? <AppstoreOutlined /> : <FolderOutlined />}
+          </span>
+          <span className="truncate flex-1" title={node.title}>{node.title}</span>
+        </div>
+      </Dropdown>
     );
   };
 
