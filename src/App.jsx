@@ -450,7 +450,7 @@ function App() {
       />
       
       <Layout className="bg-white">
-        <Header className="bg-white px-6 border-b border-gray-200 flex items-center justify-between h-[64px]" style={{ WebkitAppRegion: 'drag' }}>
+        <Header className="!bg-white px-6 border-b border-gray-200 flex items-center justify-between h-[64px]" style={{ WebkitAppRegion: 'drag' }}>
           <Title level={3} style={{ margin: 0 }}>
             {currentTitle}
           </Title>

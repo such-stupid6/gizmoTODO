@@ -17,3 +17,22 @@ html, body {
   justify-content: center;
   align-items: center;
 }
+
+/* Sidebar Tree Customization */
+.ant-tree .ant-tree-node-content-wrapper {
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.ant-tree .ant-tree-node-content-wrapper:hover {
+    background-color: rgba(0, 0, 0, 0.04) !important;
+}
+
+.ant-tree .ant-tree-node-content-wrapper.ant-tree-node-selected {
+    background-color: #e6f4ff !important; /* Lighter blue background */
+    font-weight: 600;
+}
+
+.ant-tree .ant-tree-node-content-wrapper.ant-tree-node-selected .ant-tree-title {
+    color: #1677ff; /* Primary Blue */
+}

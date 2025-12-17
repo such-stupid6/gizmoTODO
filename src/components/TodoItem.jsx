@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, Checkbox, Button, Typography, Tag } from 'antd';
 import { DeleteOutlined, CalendarOutlined, PlayCircleOutlined, FieldTimeOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -6,6 +6,27 @@ import dayjs from 'dayjs';
 const { Text } = Typography;
 
 const TodoItem = ({ item, toggleTodoCompletion, handleDeleteTodo, handleStartPomodoro }) => {
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  const handleToggle = (e) => {
+    e?.stopPropagation();
+    
+    // If already completed or currently animating, just toggle immediately (or ignore if animating?)
+    // If checking (false -> true), we animate first.
+    if (!item.completed && !isAnimating) {
+        setIsAnimating(true);
+        // Wait for animation (500ms) before actual toggle
+        setTimeout(() => {
+            toggleTodoCompletion(item.id);
+            setIsAnimating(false);
+        }, 600);
+    } else {
+        // Unchecking or already animating - toggle immediately
+        toggleTodoCompletion(item.id);
+        setIsAnimating(false);
+    }
+  };
+
   const formatDeadline = (date) => {
     if (!date) return '';
     const now = new Date();
@@ -38,7 +59,7 @@ const TodoItem = ({ item, toggleTodoCompletion, handleDeleteTodo, handleStartPom
   };
 
   const getCardStyle = (deadline, completed) => {
-      if (completed) return { opacity: 0.6, background: '#f5f5f5' };
+      if (completed) return {};
       if (!deadline) return {};
       
       const now = new Date();
@@ -55,20 +76,29 @@ const TodoItem = ({ item, toggleTodoCompletion, handleDeleteTodo, handleStartPom
     <Card 
         hoverable
         bodyStyle={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-        className="w-full"
+        className={`w-full transition-all duration-300 ${item.completed ? 'bg-gray-50 opacity-60' : 'bg-white'}`}
         style={getCardStyle(item.deadline, item.completed)}
-        onClick={() => toggleTodoCompletion(item.id)}
+        onClick={handleToggle}
     >
         <div className="flex items-center flex-1 gap-4">
             <Checkbox 
-                checked={item.completed} 
-                onChange={() => toggleTodoCompletion(item.id)}
+                checked={item.completed || isAnimating} 
+                onChange={handleToggle}
                 onClick={(e) => e.stopPropagation()}
             />
-            <div className={`flex flex-col ${item.completed ? 'line-through text-gray-400' : ''}`}>
-                <Text delete={item.completed} strong={!item.completed} className="text-base">
-                    {item.text}
-                </Text>
+            <div className={`flex flex-col transition-opacity duration-300 ${item.completed ? 'opacity-50' : 'opacity-100'}`}>
+                <div className="relative inline-block w-fit">
+                    <Text strong={!item.completed && !isAnimating} className="text-base">
+                        {item.text}
+                    </Text>
+                    <span 
+                        className={`absolute left-0 top-1/2 h-[2px] bg-gray-600 transition-all duration-500 ease-out`}
+                        style={{ 
+                            width: (item.completed || isAnimating) ? '100%' : '0%',
+                            transform: 'translateY(-50%)'
+                        }}
+                    />
+                </div>
                 {item.deadline && (
                     <div className="flex items-center mt-1 text-xs text-gray-500">
                         <CalendarOutlined className="mr-1" />

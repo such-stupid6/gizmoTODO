@@ -31,6 +31,7 @@ const Sidebar = ({
   
   const renderTitle = (node) => {
     const isRoot = node.key === 'root';
+    const isSelected = currentCategory === node.key;
     
     const items = [
       {
@@ -60,10 +61,15 @@ const Sidebar = ({
     return (
       <Dropdown menu={{ items }} trigger={['contextMenu']}>
         <div className="flex items-center group w-full pr-2 overflow-hidden">
-          <span className="mr-2 text-gray-500 shrink-0 flex items-center">
+          <span className={`mr-2 shrink-0 flex items-center ${isSelected ? 'text-blue-600' : 'text-gray-700'}`}>
               {isRoot ? <AppstoreOutlined /> : <FolderOutlined />}
           </span>
-          <span className="truncate flex-1" title={node.title}>{node.title}</span>
+          <span 
+            className={`truncate flex-1 transition-colors ${isSelected ? 'font-bold text-gray-950' : 'text-gray-900'}`} 
+            title={node.title}
+          >
+            {node.title}
+          </span>
         </div>
       </Dropdown>
     );
@@ -76,7 +82,7 @@ const Sidebar = ({
       collapsed={collapsed} 
       theme="light"
       width={250}
-      className="border-r border-gray-200 bg-gray-50/50"
+      className="border-r border-gray-200 bg-white"
     >
       <div className="h-full flex flex-col">
         <TrafficLights />
