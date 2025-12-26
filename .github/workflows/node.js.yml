@@ -14,24 +14,27 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/checkout@v
       with:
-        node-version: 20
+        fetch-depth: 0
+
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: latest
 
     - name: Install Dependencies
       # Using npm install because package-lock.json might be missing (project uses bun.lock)
-      run: npm install
+      run: bun install
 
     - name: Build Electron App
       env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }} 
-      run: npm run electron:build:win
+      run: bun run electron:build:win
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: promodoro-todo-win
         path: release/*.exe
+        if-no-files-found: ignore
