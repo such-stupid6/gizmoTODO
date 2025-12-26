@@ -5,6 +5,7 @@ import Store from 'electron-store';
 
 Store.initRenderer();
 const store = new Store();
+console.log('Electron Store Path:', store.path);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

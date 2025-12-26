@@ -71,7 +71,7 @@ const SettingsModal = ({ open, onClose, settings, onSave }) => {
       cancelText="取消"
       onCancel={onClose}
       onOk={handleOk}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form form={form} layout="vertical" preserve={false}>
         <Tabs defaultActiveKey="1" items={items} />

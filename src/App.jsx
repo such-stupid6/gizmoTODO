@@ -77,6 +77,7 @@ function App() {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
   const [renamingCategory, setRenamingCategory] = useState(null);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
   
   // Default settings
   const [settings, setSettings] = useState({
@@ -151,55 +152,72 @@ function App() {
                 const isEmptyRoot = Array.isArray(savedCategories) && savedCategories.length === 1 && savedCategories[0].key === 'root' && (!savedCategories[0].children || savedCategories[0].children.length === 0) && (!savedTodos || savedTodos.length === 0);
 
                 if (isLegacy || isEmptyRoot) {
-                    console.log('Legacy or Empty data detected, triggering Mock Data generation');
-                    throw new Error('Legacy or Empty Format');
+                    console.log('Legacy or Empty data detected, resetting to clean state');
+                    const initialCategories = [{ key: 'root', title: '全部项目', children: [] }];
+                    setCategories(initialCategories);
+                    setTodoItems([]);
+                    
+                    // Persist immediately
+                    ipcRenderer.send('store-set', 'categories', initialCategories);
+                    ipcRenderer.send('store-set', 'todos', []);
+                } else {
+                    setCategories(savedCategories);
+                    setTodoItems(savedTodos.map(item => ({
+                        ...item,
+                        deadline: item.deadline ? new Date(item.deadline) : null
+                    })));
                 }
-
-                setCategories(savedCategories);
-                setTodoItems(savedTodos.map(item => ({
-                    ...item,
-                    deadline: item.deadline ? new Date(item.deadline) : null
-                })));
             } else {
-                // Initialize with Mock Data
-                const { categories: mockCats, todos: mockTodos } = generateMockData();
-                setCategories(mockCats);
-                setTodoItems(mockTodos.map(item => ({
-                    ...item,
-                    deadline: item.deadline ? new Date(item.deadline) : null
-                })));
-                ipcRenderer.send('store-set', 'categories', mockCats);
-                ipcRenderer.send('store-set', 'todos', mockTodos);
+                // Initialize with Empty Root if no data found
+                // Only use Mock Data if absolutely necessary or requested, but here we prefer clean slate or just Root
+                // But for first time user, maybe mock data is good?
+                // User requested: "Don't fill mock data every time in dev".
+                // So if we are here, it means NO data in store.
+                // We can just initialize empty root.
+                
+                // If we want to persist the empty state so it doesn't try to mock again:
+                 const initialCategories = [{ key: 'root', title: '全部项目', children: [] }];
+                 const initialTodos = [];
+                 
+                 setCategories(initialCategories);
+                 setTodoItems(initialTodos);
+                 
+                 // Persist immediately so next load finds them
+                 ipcRenderer.send('store-set', 'categories', initialCategories);
+                 ipcRenderer.send('store-set', 'todos', initialTodos);
             }
 
         } catch (e) {
-            console.error('Data loading error or reset:', e);
-            const { categories: mockCats, todos: mockTodos } = generateMockData();
-            setCategories(mockCats);
-            setTodoItems(mockTodos.map(item => ({
-                ...item,
-                deadline: item.deadline ? new Date(item.deadline) : null
-            })));
+            console.error('Data loading error:', e);
+            // In case of error, we might fall back to empty state instead of Mock Data to avoid overwriting user data logic errors
+             const initialCategories = [{ key: 'root', title: '全部项目', children: [] }];
+             setCategories(initialCategories);
+             setTodoItems([]);
         }
     };
 
-    loadData();
+    loadData().then(() => {
+        setIsDataLoaded(true);
+    });
   }, []);
 
   useEffect(() => {
+    if (!isDataLoaded) return;
     ipcRenderer.send('store-set', 'categoryPanelCollapsed', collapsed);
-  }, [collapsed]);
+  }, [collapsed, isDataLoaded]);
 
   useEffect(() => {
+    if (!isDataLoaded) return;
     ipcRenderer.send('store-set', 'categories', categories);
-  }, [categories]);
+  }, [categories, isDataLoaded]);
 
   useEffect(() => {
+    if (!isDataLoaded) return;
     ipcRenderer.send('store-set', 'todos', todoItems.map(item => ({
       ...item,
       deadline: item.deadline ? item.deadline.toISOString() : null
     })));
-  }, [todoItems]);
+  }, [todoItems, isDataLoaded]);
 
   const handleAddTodo = () => {
     const todoText = newTodoText.trim();

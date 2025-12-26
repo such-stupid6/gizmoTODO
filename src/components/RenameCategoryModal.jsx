@@ -41,7 +41,7 @@ const RenameCategoryModal = ({
             onCancel={onCancel}
             okText="确定"
             cancelText="取消"
-            destroyOnClose
+            destroyOnHidden
         >
             <Form form={form} layout="vertical">
                 <Form.Item
